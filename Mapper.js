@@ -41,18 +41,34 @@ export default function Mapper<T extends { new(...args: any[]): {} }>(constructo
             super(...args);
           
             Object.keys(this).forEach((key: any) => {
-                if (metadata[key])
-                    (this as any)[key] = findKey(args[0], metadata[key]);
+                let storage;
+                if (metadata[key]){
+                    storage = findKey(args[0], metadata[key]['metadata']);
+                    (this as any)[key] = storage;
+                }
                 else
-                    (this as any)[key] = findKey(args[0], key);
+                    storage = findKey(args[0], key);
+                if (Array.isArray(storage)){
+                    let mapped  = [];
+                    for(let el of storage){
+                        let instantiated = new metadata[key]['class'](el);
+                        mapped.push(instantiated);
+                    }
+                    (this as any)[key] = mapped;
+                }
+                else if (typeof storage === 'object' && metadata[key]) {
+                    (this as any)[key] = new metadata[key]['class'](storage);
+                }
             });
-            console.log(this)
         }
     };
 }
 
-export function Map(metadataKey: string) {
+export function Map(metadataKey: string, classRef?: any) {
     return function(target: any, propertyKey: string) {
-        metadata[propertyKey] = metadataKey;
+        metadata[propertyKey] = {
+            metadata: metadataKey,
+            class: classRef
+        };
     };
 }
