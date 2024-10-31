@@ -1,6 +1,6 @@
 # Utilizzo
 il file contenuto nella repo va importato nella classe sulla quale si vuole utilizzare, va definito il decorator @Mapper sopra la classe e i decorator @Map sulle singole proprietà.
-```
+```js
 @Mapper
 export default class User {
     @Map("username")
