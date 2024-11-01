@@ -7,8 +7,8 @@ interface ClassType<T> {
 type MapperConfig = {
     metadata: string;
     class?: ClassType<any>;
-    callBackPre?: (self: any, originalValue: any) => void;
-    callBackPost?: (self: any, originalValue: any) => void;
+    beforeMapping?: (self: any, originalValue: any) => void;
+    afterMapping?: (self: any, originalValue: any) => void;
 }
 
 export function findKey(obj: any, key: string): any | null {
@@ -16,33 +16,15 @@ export function findKey(obj: any, key: string): any | null {
     let result:  any = JSON.parse(JSON.stringify(obj));
     
     for (let step of splitted) {
-        if (result[step] !== undefined) {
+        if (!isNaN(step as any))
+            result = result[Number(step)];
+        else if (result[step] !== undefined)
             result = result[step];
-        } else {
+        else
             return null
-        }
     }
     return result;
 }
-
-export function updateValueByKey(obj: any, keyToFind: string, newValue: any): boolean {
-    if (obj.hasOwnProperty(keyToFind)) {
-        obj[keyToFind] = newValue;
-        return true;
-    }
-    
-    for (const k in obj) {
-        if (typeof obj[k] === 'object' && obj[k] !== null) {
-            const result = updateValueByKey(obj[k], keyToFind, newValue);
-
-            if (result) {
-                return true;
-            }
-        }
-    }
-    return false;
-}
-
 
 export default function Mapper<T extends { new(...args: any[]): {} }>(constructor: T) {
     return class extends constructor {
@@ -57,8 +39,8 @@ export default function Mapper<T extends { new(...args: any[]): {} }>(constructo
                 else
                     storage = findKey(args[0], key);
                 //eseguo la callback pre
-                if (metadata[key]?.callBackPre)
-                    metadata[key]?.callBackPre(this, storage);
+                if (metadata[key]?.beforeMapping)
+                    metadata[key]?.beforeMapping(this, storage);
 
                 //se è un array di oggetti mappo ogni oggetto
                 if (Array.isArray(storage)){
@@ -85,9 +67,10 @@ export default function Mapper<T extends { new(...args: any[]): {} }>(constructo
                 }
 
                 //eseguo la callback post
-                if (metadata[key]?.callBackPost)
-                    metadata[key]?.callBackPost(this, storage);
+                if (metadata[key]?.afterMapping)
+                    metadata[key]?.afterMapping(this, storage);
             });
+            console.log(this)
         }
     };
 }
